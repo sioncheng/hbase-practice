@@ -1,8 +1,6 @@
 package com.github.sioncheng.hbasePractice;
 
-import org.apache.hadoop.hbase.client.Connection;
-import org.apache.hadoop.hbase.client.Put;
-import org.apache.hadoop.hbase.client.Table;
+import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.util.Bytes;
 
 import java.io.IOException;
@@ -29,7 +27,19 @@ public class BatchPutsWithSomeError {
                 put3.addColumn(Bytes.toBytes("colfam1"), Bytes.toBytes("qual1"), Bytes.toBytes("val33"));
                 puts.add(put3);
 
-                table.put(puts);
+                try {
+                    table.put(puts);
+                } catch (RetriesExhaustedWithDetailsException re) {
+                    int numErrors = re.getNumExceptions();
+                    System.out.println(String.format("Number of exceptions %d", numErrors));
+                    for (int i = 0 ; i < numErrors; i++) {
+                        System.out.println(String.format("Cause[%d] %s ", i, re.getCause(i)));
+                        System.out.println(String.format("Hostname[%d] %s", i, re.getHostnamePort(i)));
+                        System.out.println(String.format("Row[%d] %s", i, re.getRow(i)));
+                    }
+                    System.out.println(String.format("Cluster issues %s", re.mayHaveClusterIssues()));
+                    System.out.println(String.format("Description %s", re.getExhaustiveDescription()));
+                }
             }
         });
 
